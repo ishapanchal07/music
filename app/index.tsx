@@ -1,4 +1,7 @@
-import { StyleSheet, Text, View } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons"; // ✅ missing import
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type Song = {
   name: string;
@@ -6,14 +9,33 @@ type Song = {
 };
 
 export default function Index() {
+  const [songs, setSongs] = useState<Song[]>([]);
+  const router = useRouter();
+
+  const pickAudio = () => {
+    // TODO: implement audio picker
+    console.log("Pick audio clicked");
+  };
+
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <MaterialIcons name="music-note" size={24} color="#6366f1" />
+        <Text style={styles.headerTitle}>Music Playlist</Text>
+        <Text style={styles.headerSubtitle}>
+          {songs.length} song{songs.length !== 1 ? "s" : ""}
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={pickAudio}
+        activeOpacity={0.8}
+      >
+        <MaterialIcons name="add-circle" size={24} color="#fff" />
+        <Text style={styles.addButtonText}>Add Music</Text>
+      </TouchableOpacity>
+
       <Text>Edit app/index.tsx to edit this screen.</Text>
     </View>
   );
@@ -24,6 +46,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 20,
     backgroundColor: "#f9fafb",
+    flex: 1, // ✅ better layout
   },
   header: {
     alignItems: "center",
@@ -37,7 +60,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   headerSubtitle: {
-    fontSize: 14, // fixed
+    fontSize: 14,
     color: "#6b7180",
     marginTop: 4,
   },
@@ -57,60 +80,8 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: "#fff",
-    fontSize: 16, // fixed
-    fontWeight: "600", // fixed
+    fontSize: 16,
+    fontWeight: "600",
     marginLeft: 8,
-  },
-  songItem: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    padding: 14,
-    marginBottom: 10,
-    borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  songIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    backgroundColor: "#f3f4f6",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  songInfo: {
-    flex: 1,
-  },
-  songName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  songIndex: {
-    fontSize: 12,
-    color: "#9ca3af",
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptytext: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#6b7280",
-    marginTop: 16,
-  },
-  empSubtext: {
-    fontSize: 14,
-    color: "#9ca3af",
-    marginTop: 8,
-    textAlign: "center",
   },
 });
