@@ -84,7 +84,7 @@ export default function Home() {
         <FlatList
           data={filteredLibrary}
           keyExtractor={(item) => item.uri}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 160 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 200 }}
           renderItem={({ item, index }) => (
             <TouchableOpacity
               style={styles.songsItem}
@@ -196,11 +196,13 @@ const styles = StyleSheet.create({
   },
   songInfo: {
     flex: 1,
+    flexShrink: 1,
     marginRight: 12,
   },
   songName: {
     fontSize: 16,
     fontWeight: "600",
+    flexShrink: 1,
     marginBottom: 4,
   },
   songArtist: {

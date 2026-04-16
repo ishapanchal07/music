@@ -1,10 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { extractMetadata } from "../utils/MetadataParser";
 
 export type Song = {
   name: string;
   uri: string;
+  metadata?: { title: string; artist: string; cleanName: string };
 };
 
 export type Playlist = {
@@ -106,7 +108,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       player.play();
       
       const formatName = currentSong.name ? currentSong.name.replace(/\.[^/.]+$/, "") : "Unknown Track";
-      player.setActiveForLockScreen(true, { title: formatName });
+      
+      try {
+        player.setActiveForLockScreen(true, { title: formatName });
+      } catch (err) {
+        console.warn("Skipping native lockscreen config (Expected on Expo Go)");
+      }
 
       // Add to recently played (keep last 10)
       setRecentlyPlayed((prev) => {
@@ -135,8 +142,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [status.playing, status.currentTime, status.duration, isLooping]);
 
   const addSongsToLibrary = (songs: Song[]) => {
+    const parsedSongs = songs.map(s => ({
+       ...s,
+       metadata: s.metadata || extractMetadata(s.name)
+    }));
     setLibrary(prev => {
-      const combined = [...prev, ...songs];
+      const combined = [...prev, ...parsedSongs];
       const unique = combined.filter((v, i, a) => a.findIndex((t) => (t.uri === v.uri)) === i);
       persistState("@music_lib", unique);
       return unique;

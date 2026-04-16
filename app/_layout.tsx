@@ -10,9 +10,12 @@ export default function RootLayout() {
     try {
       setAudioModeAsync({
         playsInSilentMode: true,
-        shouldPlayInBackground: true,
+        // Set this to `false` temporarily because Expo Go aggressively crashes when asked
+        // to bind a native background audio service over the air.
+        // Once you build a Dev Client APK, you can safely turn this back to `true`!
+        shouldPlayInBackground: false,
         interruptionMode: "doNotMix",
-      }).catch((e) => console.warn("Background mode failed (expected on Expo Go):", e));
+      }).catch((e) => console.warn("Background mode failed:", e));
     } catch (e) {
       console.warn("Failed to set audio mode", e);
     }

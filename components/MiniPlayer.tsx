@@ -44,9 +44,9 @@ export default function MiniPlayer() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 85, // Above bottom tabs natively
-    left: 8,
-    right: 8,
+    bottom: 60, // Above bottom tabs natively
+    left: 10,
+    right: 10,
     height: 64,
     borderRadius: 12,
     flexDirection: 'row',
@@ -69,10 +69,12 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
+    flexShrink: 1,
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
+    flexShrink: 1,
     marginBottom: 2,
   },
   artist: {

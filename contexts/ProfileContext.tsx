@@ -1,17 +1,25 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export type ThemeColor = "indigo" | "rose" | "emerald" | "amber" | "sky";
 export type ThemeMode = "dark" | "light";
 
 type ProfileContextType = {
   username: string;
+  email: string | null;
   profilePicUri: string | null;
   themeMode: ThemeMode;
   themeColor: ThemeColor;
+  isLoggingIn: boolean;
   updateProfile: (name: string, uri: string | null) => void;
   toggleThemeMode: () => void;
   setThemeColor: (color: ThemeColor) => void;
+  loginWithGoogle: () => void;
+  logout: () => void;
 };
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -43,18 +51,22 @@ export const COLORS = {
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [username, setUsername] = useState("Music Lover");
+  const [email, setEmail] = useState<string | null>(null);
   const [profilePicUri, setProfilePicUri] = useState<string | null>(null);
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
   const [themeColor, setThemeColorState] = useState<ThemeColor>("indigo");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     const loadPrf = async () => {
       try {
         const u = await AsyncStorage.getItem("@user_name");
+        const m = await AsyncStorage.getItem("@user_email");
         const p = await AsyncStorage.getItem("@user_pic");
         const mode = await AsyncStorage.getItem("@theme_mode");
         const color = await AsyncStorage.getItem("@theme_color");
         if (u) setUsername(u);
+        if (m) setEmail(m);
         if (p) setProfilePicUri(p);
         if (mode === "dark" || mode === "light") setThemeMode(mode);
         if (color && Object.keys(COLORS).includes(color)) setThemeColorState(color as ThemeColor);
@@ -64,6 +76,42 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     };
     loadPrf();
   }, []);
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    webClientId: "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+    androidClientId: "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com",
+    iosClientId: "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
+  });
+
+  useEffect(() => {
+    const handleAuth = async () => {
+      if (response?.type === "success") {
+        const auth = response.authentication;
+        if (!auth?.accessToken) return;
+        
+        setIsLoggingIn(true);
+        try {
+          const res = await fetch("https://www.googleapis.com/userinfo/v2/me", {
+            headers: { Authorization: `Bearer ${auth.accessToken}` },
+          });
+          const user = await res.json();
+          
+          setUsername(user.name);
+          setEmail(user.email);
+          setProfilePicUri(user.picture);
+          
+          await AsyncStorage.setItem("@user_name", user.name);
+          await AsyncStorage.setItem("@user_email", user.email);
+          await AsyncStorage.setItem("@user_pic", user.picture);
+        } catch (e) {
+          console.error("Google Info fetch failed", e);
+        } finally {
+          setIsLoggingIn(false);
+        }
+      }
+    };
+    handleAuth();
+  }, [response]);
 
   const updateProfile = async (name: string, uri: string | null) => {
     setUsername(name);
@@ -75,6 +123,19 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const loginWithGoogle = () => {
+    promptAsync();
+  };
+
+  const logout = async () => {
+    setUsername("Music Lover");
+    setEmail(null);
+    setProfilePicUri(null);
+    await AsyncStorage.removeItem("@user_name");
+    await AsyncStorage.removeItem("@user_email");
+    await AsyncStorage.removeItem("@user_pic");
   };
 
   const toggleThemeMode = async () => {
@@ -89,7 +150,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ProfileContext.Provider value={{ username, profilePicUri, themeMode, themeColor, updateProfile, toggleThemeMode, setThemeColor }}>
+    <ProfileContext.Provider value={{ 
+      username, email, profilePicUri, themeMode, themeColor, isLoggingIn, 
+      updateProfile, toggleThemeMode, setThemeColor, loginWithGoogle, logout 
+    }}>
       {children}
     </ProfileContext.Provider>
   );
