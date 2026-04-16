@@ -1,4 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -11,7 +12,7 @@ import {
 
 type Song = {
   name: string;
-  url: string;
+  uri: string;
 };
 
 export default function Index() {
@@ -23,9 +24,10 @@ export default function Index() {
       type: "audio/*",
       multiple: true,
     });
-    if (!result.canceled) {
-      const files = result.assets.map((file) => ({
-        name: file.name,
+
+    if (!result.canceled && result.assets) {
+      const files: Song[] = result.assets.map((file) => ({
+        name: file.name ?? "Unknown",
         uri: file.uri,
       }));
 
@@ -33,12 +35,13 @@ export default function Index() {
     }
   };
 
-  const formateSongName = (name: string) => {
+  const formatSongName = (name: string) => {
     return name.replace(/\.[^/.]+$/, "").substring(0, 40);
   };
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <MaterialIcons name="music-note" size={24} color="#6366f1" />
         <Text style={styles.headerTitle}>Music Playlist</Text>
@@ -47,6 +50,7 @@ export default function Index() {
         </Text>
       </View>
 
+      {/* Add Button */}
       <TouchableOpacity
         style={styles.addButton}
         onPress={pickAudio}
@@ -56,6 +60,7 @@ export default function Index() {
         <Text style={styles.addButtonText}>Add Music</Text>
       </TouchableOpacity>
 
+      {/* Empty State */}
       {songs.length === 0 ? (
         <View style={styles.emptyState}>
           <MaterialIcons name="music-note" size={64} color="#d1d5db" />
@@ -65,6 +70,7 @@ export default function Index() {
           </Text>
         </View>
       ) : (
+        /* Songs List */
         <FlatList
           data={songs}
           keyExtractor={(item, index) => index.toString()}
@@ -88,10 +94,11 @@ export default function Index() {
 
               <View style={styles.songInfo}>
                 <Text style={styles.songName} numberOfLines={1}>
-                  {formateSongName(item.name)}
+                  {formatSongName(item.name)}
                 </Text>
                 <Text style={styles.songIndex}>Track {index + 1}</Text>
               </View>
+
               <MaterialIcons
                 name="play-circle-filled"
                 size={28}
@@ -99,7 +106,6 @@ export default function Index() {
               />
             </TouchableOpacity>
           )}
-          scrollEnabled={true}
           showsVerticalScrollIndicator={true}
         />
       )}
@@ -127,7 +133,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
-    color: "#6b7180",
+    color: "#6b7280",
     marginTop: 4,
   },
   addButton: {
@@ -151,12 +157,38 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  emptyState: { alignItems: "center", marginTop: 40 },
-  emptyMessage: { fontSize: 18, fontWeight: "600", marginTop: 10 },
-  emptySubtext: { fontSize: 14, color: "#6b7280", marginTop: 4 },
+  emptyState: {
+    alignItems: "center",
+    marginTop: 40,
+  },
+  emptyMessage: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 10,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginTop: 4,
+  },
 
-  songsItem: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-  songIcon: { marginRight: 10 },
-  songInfo: {},
-  songIndex: { fontSize: 16 },
+  songsItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  songIcon: {
+    marginRight: 10,
+  },
+  songInfo: {
+    flex: 1,
+  },
+  songName: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  songIndex: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
 });

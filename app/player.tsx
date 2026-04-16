@@ -1,114 +1,195 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import Slider from '@react-native-community/slider';
-import { HeaderTitle } from "@react-navigation/elements";
-import { useAudioPlayer , useAudioPlayerStatus } from 'expo-audio';
+import Slider from "@react-native-community/slider";
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect } from "react";
-import {
-    StyleSheet,
-    Text,
-    TouchableOcapacity,
-    View,
-} from 'react-native';
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type Song = {
-    name: string;
-    uri: string;
+  name: string;
+  uri: string;
 };
 
 export default function PlayerScreen() {
-    return (
+  const router = useRouter();
+  const { songs, index } = useLocalSearchParams();
 
+  const parsedSongs: Song[] = songs ? JSON.parse(songs as string) ;
+
+  const [currentIndex, setCurrentIndex] = useState(Number(index));
+  const currentSong = parsedSongs[currentIndex];
+
+  const player = useAudioPlayer(currentSong?.uri);
+  const status = useAudioPlayerStatus(player);
+
+  useEffect(() => {
+    if (currentSong?.uri) {
+      player.replace(currentSong.uri);
+      player.play();
+    }
+  }, [currentIndex]);
+
+  const togglePlayPause = async () => {
+    if (status.playing) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  };
+
+  const nextSong = () => {
+    setCurrentIndex((prev) => 
+      prev === parsedSongs.length - 1 ? 0 : prev + 1
     );
+  };
+
+  const prevSong = () => {
+    setCurrentIndex((prev) => 
+      prev === 0 ? parsedSongs.length - 1 : prev - 1
+    );
+  };
+
+  const seekAudio = async (value: number) => {
+    await player.seekTo(value);
+  };
+
+  const formatTime = (milliseconds: number) => {
+    const totalSeconds = Math.floor(milliseconds);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const formatSongName = (name: string) => {
+    return name.replace(/\.[^/.]+$/, '');
+  };
+
+  if (!currentSong) {
+    return <Text>No song found</Text>;
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.albumArtContainer}>
+        <View style={styles.albumArt}>  
+        <MaterialIcons name="music-note" size={80} color="#6366f1" />
+      </View>
+      </View>
+
+      <View style={styles.songDetailsContainer}>
+        <Text style={styles.songTitle} numberOfLines={2}>
+          {formatSongName(currentSong.name)}
+        </Text>
+        <Text style={styles.trackNumber}>
+          Track {currentIndex + 1} of {parsedSongs.length}
+        </Text>
+      </View>
+
+      <View style={styles.progressContainer}>
+        <Slider
+        style={styles.slider}
+        minimumValue={0}
+        maximumValue={status.duration || 1}
+        value={status.currentTime || 0}
+        onSlidingComplete={seekAudio}
+        minimumTrackTintColor="#6366f1"
+        maximumTrackTintColor="#e5e7eb"
+        thumbTintColor="#6366f1"
+      />
+      <View style={styles.timeContainer}>
+        <Text style={styles.timeText}>
+          {formatTime(status.currentTime || 0)}
+        </Text>
+        <Text style={styles.timeText}>
+          {formatTime(status.duration || 0)}
+        </Text>
+      </View>
+      </View>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
+  container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: "#f9fafb",
     paddingHorizontal: 16,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
-        marginTop: 12,
-    },
-    HeaderTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#111827',
-    },
-    albumArtContainer: {
-        alignItems: 'center',
-        marginVertical: 24,
-    },
-    albumArt: {
-        width: 200,
-        height: 200,
-        borderRadius: 16,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#6366f1',
-        shadowOffset: { width: 0, height: 8},
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
-        elevation: 12,
-    },
-    songDetailsContainer: {
-        alignItems: 'center',
-        marginBottom: 32,
-    },
-    songTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#111827',
-        textAlign: 'center',
-        marginBottom: 8,
-    },
-    trackNumber: {
-        fontSize: 13,
-        color: '#6b7280',
-        fontWeight: '500',
-    },
-    progressContainer: {
-        marginBottom: 32,
-    },
-    slider: {
-        width: 100%,
-        height: 40,
-    },
-    timeContainer: {
-        flexDiraction: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 4,
-    },
-    timeText: {
-        fontSize: 12,
-        color: '#6b7280',
-        fontWeight: '500',
-    },
-    controlsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        marginBottom: 32,
-    },
-    controlButton: {
-        padding: 12,
-    },
-    playButton: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: '#6366f1',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#6366f1',
-        shadowOffset: { width: 0, height: 8},
-        
-    }
-})
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+    marginTop: 12,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  albumArtContainer: {
+    alignItems: "center",
+    marginVertical: 24,
+  },
+  albumArt: {
+    width: 200,
+    height: 200,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  songDetailsContainer: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  songTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  trackNumber: {
+    fontSize: 13,
+    color: "#6b7280",
+    fontWeight: "500",
+  },
+  progressContainer: {
+    marginBottom: 32,
+  },
+  slider: {
+    width: "100%",
+    height: 40,
+  },
+  timeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+  },
+  timeText: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: "500",
+  },
+  controlsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  playButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#6366f1",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
